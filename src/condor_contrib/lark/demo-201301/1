@@ -1,0 +1,20 @@
+# Submits 1 jobs. Each job will:
+# 1. Loop 0 times:
+#     1. Download http://pages.cs.wisc.edu/~adesmet/lark/1000000
+#          (throttled to 10k bytes/sec)
+#     2. Sleep for 1 seconds
+
+universe = vanilla
+executable = job
+arguments = http://pages.cs.wisc.edu/~adesmet/lark/1000000 1 0 10k
+when_to_transfer_output = on_exit
+should_transfer_files = yes
+notification = never
+keep_claim_idle = 30
+on_exit_remove = FALSE
++JobName="1"
+#log = eraseme.log
+#output = eraseme.out
+#error = eraseme.err
+
+queue 1

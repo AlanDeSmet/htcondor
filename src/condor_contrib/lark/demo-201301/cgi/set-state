@@ -1,0 +1,13 @@
+#! /bin/sh
+
+# This is actually a thin wrapper; it just passes the command to set-state on 
+# a remote machine.
+
+SSH="/usr/bin/ssh -4"
+R_USERNAME=larkdemo
+R_HOST=lark01.chtc.wisc.edu
+R_BINARY=/home/larkdemo/set-state
+
+#echo $SSH $R_USERNAME@$R_HOST $R_BINARY "$@"
+$SSH $R_USERNAME@$R_HOST $R_BINARY "$@"
+exit $?

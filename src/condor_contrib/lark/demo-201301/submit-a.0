@@ -1,0 +1,15 @@
+# Submits 100 jobs. Each job will:
+# 1. Download http://pages.cs.wisc.edu/~adesmet/lark/100000
+# 2. Sleep for 20 seconds
+
+universe = vanilla
+executable = job
+arguments = http://pages.cs.wisc.edu/~adesmet/lark/100000 20
+when_to_transfer_output = on_exit
+should_transfer_files = yes
+notification = never
+keep_claim_idle = 30
+concurrency_limits = network_a
+#log = eraseme.log
+
+queue 100

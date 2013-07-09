@@ -1,0 +1,194 @@
+#! /usr/bin/perl -w
+use strict;
+use Getopt::Long;
+
+my $DEFAULT_COUNT=1;
+
+
+# If changing URLs inside of adesmet's directory, existing files are
+# (and their matching size in bytes): 
+# 1, 10, 100, 1000, 4000, 10000, 100000, 1000000
+
+#my $PAGES_HOST = 'pages.cs.wisc.edu';
+my $PAGES_HOST = '128.105.7.26';
+
+my(%PRESETS) = (
+	1 => {
+		description=> 'Download',
+		url   => "http://$PAGES_HOST/~adesmet/lark/1000000",
+		sleep => 1,
+		count => $DEFAULT_COUNT,
+		#network => 'Path_A',
+		loops => 0,
+		limit_rate => "100k",
+		},
+	2 => {
+		description=> 'Upload',
+		upload => 1000000,
+		url   => "http://$PAGES_HOST/~adesmet/lark/devnull.pl",
+		sleep => 10,
+		count => $DEFAULT_COUNT,
+		#network => 'Path_B',
+		loops => 0,
+		limit_rate => "50k",
+		},
+);
+
+my($url, $sleep, $network, $count, $loops, $limit_rate, $preset, $upload, $max_duration);
+my $COUNT_DEFAULT = 1;
+my $LOOPS_DEFAULT = 0;
+my $DEFAULT_MAX_DURATION = 60*18; # Seconds
+my $LIMIT_RATE_DEFAULT = "10000m";
+if( ! GetOptions(
+	"h|help" => \&help_and_exit,
+	"u|url=s" => \$url,
+	"s|sleep=i" => \$sleep,
+	#"n|network=s" => \$network,
+	"c|count=i" => \$count,
+	"l|loops=i" => \$loops,
+	"r|rate=s" => \$limit_rate,
+	"preset=s" => \$preset,
+	"upload=i" => \$upload,
+	)) {
+	help_and_exit();
+}
+
+my $outputfile = shift @ARGV;
+
+if(@ARGV) {
+	help_and_exit("Too many arguments. These were unexpected: @ARGV");
+}
+
+if(defined $preset) {
+	if(not exists $PRESETS{$preset}) {
+		help_and_exit("Unknown preset $preset");
+	}
+
+	if(not defined $url) { $url = $PRESETS{$preset}{url} }
+	if(not defined $sleep) { $sleep = $PRESETS{$preset}{sleep} }
+	if(not defined $count) { $count = $PRESETS{$preset}{count} }
+	#if(not defined $network) { $network = $PRESETS{$preset}{network} }
+	if(not defined $loops) { $loops = $PRESETS{$preset}{loops} }
+	if(not defined $limit_rate) { $limit_rate = $PRESETS{$preset}{limit_rate} }
+	if(not defined $upload and exists $PRESETS{$preset}{upload})
+		{ $upload = $PRESETS{$preset}{upload} }
+	if(not defined $max_duration and exists $PRESETS{$preset}{max_duration})
+		{ $max_duration = $PRESETS{$preset}{max_duration} }
+}
+
+if(not defined $count) { $count = $COUNT_DEFAULT }
+if(not defined $loops) { $loops = $LOOPS_DEFAULT }
+if(not defined $limit_rate) { $limit_rate = $LIMIT_RATE_DEFAULT }
+if(not defined $max_duration) { $max_duration = $DEFAULT_MAX_DURATION }
+
+if(not defined $url or not defined $sleep) {
+	help_and_exit("You must specify a preset, or all of url and sleep.")
+}
+
+if(not defined $outputfile) {
+	help_and_exit("You must specify an output file.");
+}
+
+my $body = create_submit_file($count, $url, $sleep, $network, $loops, $limit_rate, $upload, $max_duration);
+
+open my $out, '>', "$outputfile.submit"
+	or die "Unable to open $outputfile for writing: $!";
+print $out $body;
+close $out;
+
+exit(0);
+
+
+
+
+
+sub help_and_exit {
+	print STDERR <<END;
+Usage:
+$0 <options...> <output>
+You must specify a preset or all of --url, --sleep, and --count.
+--url, --sleep, and --count override the preset.
+
+output is required, submit file will be written to <output>.submit
+
+  Valid presets:
+END
+	foreach my $key (keys %PRESETS) {
+		my $desc = $PRESETS{$key}{description} || "";
+		my $url = $PRESETS{$key}{url};
+		my $sleep = $PRESETS{$key}{sleep};
+		my $count = $PRESETS{$key}{count};
+		#my $network = $PRESETS{$key}{network};
+		my $loops = $PRESETS{$key}{loops};
+		my $cmd = "download";
+		if(defined $PRESETS{$key}{upload}) {
+			$cmd = "upload $PRESETS{$key}{upload} bytes to";
+		}
+		print STDERR "    $key: $desc\n        $count jobs, each one will\n        loop $loops times:\n            $cmd $url\n            then sleep for $sleep seconds";
+		#if(defined $network) {
+		#	print STDERR ", uses network $network";
+		#}
+		print STDERR "\n";
+	}
+#    -n --network=<NAME> Optional name of network to use.
+	print STDERR <<END;
+
+  Options:
+    -h --help         This text
+    --preset=<P>      Use preset P
+
+    -u --url=<URL>    URL to download
+    -s --sleep=<INT>  Seconds to sleep after the download
+    -c --count=<INT>  Number of jobs to submit, default $COUNT_DEFAULT
+    -l --loops=<INT>  Number of times to do the download/sleep loop, 0 for 
+                      infinite, default $LOOPS_DEFAULT
+    -r --rate=<RATE>  Limit downloads to RATE bytes/sec. m and k suffixes 
+                      allowed, Default $LIMIT_RATE_DEFAULT
+    --upload=<SIZE>   Upload SIZE bytes instead of downloading.
+
+END
+	if(@_) { print STDERR "@_\n"; }
+	exit(0)
+}
+
+sub create_submit_file {
+	my($count, $url, $sleep, $network, $loops, $limit_rate, $upload_size, $max_duration) = @_;
+
+	my $direction = "download";
+	if($upload_size) { $direction = "upload $upload_size"; }
+# 1. Request network $network
+	my $body = <<END;
+# Submits $count jobs. Each job will:
+# 1. Loop $loops times:
+#     1. Download $url
+#          (throttled to $limit_rate bytes/sec)
+#     2. Sleep for $sleep seconds
+
+universe = vanilla
+executable = job
+arguments = $direction $url $sleep $loops $limit_rate $max_duration
+when_to_transfer_output = on_exit
+should_transfer_files = yes
+notification = never
+keep_claim_idle = 3600
+on_exit_remove = FALSE
+periodic_remove = JobStatus==5
++JobName="$outputfile"
+END
+
+#	if(defined $network) {
+#		$body .= "+NetworkPath = \"$network\"\n";
+#	}
+
+	$body .= <<END;
+log = out/log
+output = out/\$(Cluster).out
+error = out/\$(Cluster).err
+
+queue $count
+END
+	return $body
+}
+
+
+__DATA__

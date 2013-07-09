@@ -1,0 +1,20 @@
+# Submits 1 jobs. Each job will:
+# 1. Loop 0 times:
+#     1. Download http://128.105.7.26/~adesmet/lark/devnull.pl
+#          (throttled to 10k bytes/sec)
+#     2. Sleep for 10 seconds
+
+universe = vanilla
+executable = job
+arguments = upload 100000 http://128.105.7.26/~adesmet/lark/devnull.pl 10 0 10k
+when_to_transfer_output = on_exit
+should_transfer_files = yes
+notification = never
+keep_claim_idle = 30
+on_exit_remove = FALSE
++JobName="2"
+log = out/log
+output = out/$(Cluster).out
+error = out/$(Cluster).err
+
+queue 1

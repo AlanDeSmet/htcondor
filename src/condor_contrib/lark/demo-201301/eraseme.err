@@ -1,0 +1,12 @@
+--2013-01-09 14:48:26--  http://pages.cs.wisc.edu/~adesmet/lark/100000
+Resolving pages.cs.wisc.edu... 128.105.7.26
+Connecting to pages.cs.wisc.edu|128.105.7.26|:80... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 100000 (98K) [text/plain]
+Saving to: `/dev/null'
+
+     0K .......... .......... .......... .......... .......... 51% 22.4M 0s
+    50K .......... .......... .......... .......... .......   100% 13.1M=0.006s
+
+2013-01-09 14:48:26 (16.6 MB/s) - `/dev/null' saved [100000/100000]
+

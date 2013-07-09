@@ -1,0 +1,3 @@
+#! /bin/sh
+#rsync -av --rsh="ssh -p 2200" --exclude ".*.swp" /p/condor/workspaces/adesmet/lark/demo-201301 wid-service-1.chtc.wisc.edu:/home/adesmet/
+rsync -av --rsh=ssh --exclude ".*.swp" /p/condor/workspaces/adesmet/lark/demo-201301 lark00.chtc.wisc.edu:/home/adesmet/

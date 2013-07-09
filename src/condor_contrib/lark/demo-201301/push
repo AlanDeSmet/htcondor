@@ -1,0 +1,2 @@
+#! /bin/sh
+rsync -av --exclude .git --exclude ".*.swp" /p/condor/workspaces/adesmet/lark/demo-201301 /scratch/adesmet/lark/demo

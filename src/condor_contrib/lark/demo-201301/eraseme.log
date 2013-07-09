@@ -1,0 +1,35 @@
+000 (022.000.000) 01/18 11:30:00 Job submitted from host: <128.104.50.10:52159>
+...
+001 (022.000.000) 01/18 11:30:05 Job executing on host: <128.104.50.10:58195>
+...
+006 (022.000.000) 01/18 11:30:13 Image size of job updated: 2
+	3  -  MemoryUsage of job (MB)
+	2320  -  ResidentSetSize of job (KB)
+...
+006 (022.000.000) 01/18 11:30:25 Image size of job updated: 15364
+	3  -  MemoryUsage of job (MB)
+	2320  -  ResidentSetSize of job (KB)
+...
+005 (022.000.000) 01/18 11:30:26 Job terminated.
+	(1) Normal termination (return value 0)
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Run Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Run Local Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Total Remote Usage
+		Usr 0 00:00:00, Sys 0 00:00:00  -  Total Local Usage
+	1275  -  Run Bytes Sent By Job
+	1688  -  Run Bytes Received By Job
+	1275  -  Total Bytes Sent By Job
+	1688  -  Total Bytes Received By Job
+	Partitionable Resources :    Usage  Request Allocated
+	   Cpus                 :                 1         1
+	   Disk (KB)            :       11        2  11739857
+	   Memory (MB)          :        3        1       958
+	   cpus                 :                           1
+	   disk                 :                    11739857
+	   memory               :                         958
+...
+000 (023.000.000) 01/18 13:26:46 Job submitted from host: <128.104.50.10:52159>
+...
+009 (023.000.000) 01/18 13:27:17 Job was aborted by the user.
+	via condor_rm (by user adesmet)
+...

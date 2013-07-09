@@ -1,0 +1,135 @@
+#! /bin/sh
+
+# Exit codes:
+#
+# 0  - All is well
+# 10 - Unable to detect IPv4 address
+# 11 - curl failed
+# 12 - Bad arguments
+
+PATH=/bin:/usr/bin:$PATH
+
+job_type=$1
+if [ "$job_type" = "download" ]; then
+	url=$2
+	sleep_time=$3
+	num_loops=$4
+	limit_rate=$5
+	max_run=$6
+elif [ "$job_type" = "upload" ]; then
+	filesize=$2
+	url=$3
+	sleep_time=$4
+	num_loops=$5
+	limit_rate=$6
+	max_run=$7
+
+	mkdir tmp
+	# Subdirectory so it doesn't get returned to submitter
+	dd if=/dev/zero of=tmp/datafile bs=1 count=$filesize
+fi
+
+if [ "$limit_rate" = "" ]; then
+	cat <<END
+Usage:
+$0 download <URL> <SLEEP DURATION> <TIMES TO REPEAT> <LIMIT RATE> <MAX TIME>
+
+Script will loop TIMES TO REPEAT, on each loop downloading URL, then sleeping
+for SLEEP DURATION seconds.  Downloads will be throttled to LIMIT RATE bytes
+per second (although k and m suffixes are allowed for kilo and mega).
+TIMES TO REPEAT can be 0, meaning infinity.  Will exit after MAX TIME in 
+seconds have passed.  All arguments are mandatory.
+
+$0 upload <SIZE> <URL> <SLEEP DURATION> <TIMES TO REPEAT> <LIMIT RATE> <MAX TIME>
+
+Script will loop TIMES TO REPEAT, on each loop uploading SIZE bytes of data to
+URL, then sleeping for SLEEP DURATION seconds.  Uploads will be throttled to 
+LIMIT RATE bytes per second (although k and m suffixes are allowed for kilo 
+and mega).  TIMES TO REPEAT can be 0, meaning infinity.  Will exit after MAX 
+TIME in seconds have passed.  All arguments are mandatory.
+
+
+END
+	exit 12
+fi
+
+if /bin/true; then
+# Configure the network to our needs.
+#INTERFACE=$(cat ifconfig.verybad | sed 's/[ \t].*//;/^$/d'|grep slot)
+	INTERFACE=$(/sbin/ifconfig -a | sed 's/[ \t].*//;/^$/d'|grep slot)
+	if [ "$INTERFACE" = "" ]; then
+		echo "Failed to find slot interface."
+		exit 10
+	fi
+
+#ADDR=$(cat ifconfig.verybad |awk '/inet addr:/ { print $2 }'| awk 'BEGIN { FS = ":" } ; { print $2 }')
+	ADDR=$(/sbin/ifconfig $INTERFACE |awk '/inet addr:/ { print $2 }'| awk 'BEGIN { FS = ":" } ; { print $2 }')
+	result=$?
+	if [ $result -ne 0 ]; then
+		echo "Failed to probe interface $INTERFACE: $result"
+		exit 10
+	fi
+	if [ "$ADDR" = "" ]; then
+		echo "Failed to find IPv4 address for interface $INTERFACE"
+		exit 10
+	fi
+
+	echo $ADDR on $INTERFACE
+
+	echo Adding routes
+	sudo /sbin/ifconfig $INTERFACE broadcast 128.104.50.255
+	sudo /sbin/route delete default
+	sudo /sbin/route add default gw 128.104.50.3
+	sudo /usr/local/arpsend/bin/arpsend -w -c 2 -o 2 -i $INTERFACE -t $ADDR
+	echo Hello! Here is my network
+	/sbin/ifconfig -a
+	echo And my routing table
+	/sbin/route -n
+	echo And dnslookup
+	/usr/bin/nslookup pages.cs.wisc.edu
+fi
+
+now=`date +%s`
+end_time=`expr $now + $max_run`
+if [ $max_run -eq 0 ]; then
+	end_time=2000000000
+fi
+
+echo Looping $num_loops times
+loops=0
+while [ '(' $num_loops -eq 0 -o $loops -lt $num_loops ')' -a '(' $max_run -eq 0 -o $now -lt $end_time ')' ]
+do
+	loops=`expr $loops + 1`
+	echo Loop number $loops
+
+	if [ "$job_type" = "download" ]; then
+		echo Downloading $url into /dev/null at rate of $limit_rate bytes/sec
+		curl --silent --show-error --limit-rate $limit_rate $url -o /dev/null
+		result=$?
+		if [ $result -ne 0 ]; then
+			echo curl failed: $result
+			exit 11
+		fi
+
+	elif [ "$job_type" = "upload" ]; then
+		echo Uploading $file_size bytes to $url at rate of $limit_rate bytes/sec
+		curl --silent --show-error --data-binary @tmp/datafile --limit-rate $limit_rate $url -o /dev/null
+		result=$?
+		if [ $result -ne 0 ]; then
+			echo curl failed: $result
+			exit 11
+		fi
+
+	else
+		echo Invalid job type $job_type
+		exit 12
+	fi
+
+	echo Sleeping for $sleep_time seconds
+	sleep $sleep_time
+
+	now=`date +%s`
+done
+
+exit 0
+

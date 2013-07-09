@@ -1,0 +1,37 @@
+Hello! Here is my network
+i_slot2   Link encap:Ethernet  HWaddr 62:BC:2D:BD:B8:C3
+          inet6 addr: fe80::60bc:2dff:febd:b8c3/64 Scope:Link
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+          RX packets:3 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:1 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000
+          RX bytes:264 (264.0 b)  TX bytes:104 (104.0 b)
+
+lo        Link encap:Local Loopback
+          LOOPBACK  MTU:16436  Metric:1
+          RX packets:0 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:0 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:0
+          RX bytes:0 (0.0 b)  TX bytes:0 (0.0 b)
+
+
+Sample ifconfig output when DHCP worked and there is an IPv4 address:
+
+Hello! Here is my network
+i_slot1   Link encap:Ethernet  HWaddr CE:E0:78:07:7C:23
+          inet addr:128.104.50.208  Bcast:128.104.50.255
+Mask:255.255.255.0
+          inet6 addr: fe80::cce0:78ff:fe07:7c23/64 Scope:Link
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+          RX packets:4 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:2 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000
+          RX bytes:627 (627.0 b)  TX bytes:423 (423.0 b)
+
+lo        Link encap:Local Loopback
+          LOOPBACK  MTU:16436  Metric:1
+          RX packets:0 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:0 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:0
+          RX bytes:0 (0.0 b)  TX bytes:0 (0.0 b)
+

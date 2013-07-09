@@ -1,0 +1,90 @@
+#! /usr/bin/perl
+use strict;
+use Getopt::Long;
+
+my $CONDOR_Q = 'condor_q';
+my $CONDOR_RM = 'condor_rm';
+my $CONDOR_SUBMIT = 'condor_submit';
+
+exit main();
+
+sub main {
+	if(@ARGV == 0) { help_and_exit(); }
+	if( (@ARGV % 3) != 0) {
+		help_and_exit("Incorrect number of arguments");
+	}
+
+	my $total_jobs = 0;
+	while(@ARGV) {
+		my $job = shift @ARGV;
+		my $network = shift @ARGV;
+		my $count = shift @ARGV;
+
+		$total_jobs += $count;
+
+		set_state($job, $network, $count);
+	}
+
+	if($total_jobs == 0) {
+		if(num_queued_jobs() == 0) {
+			reset_dhcp();
+		}
+	}
+}
+
+sub jobs_per_constraint {
+	my($constraint) = @_;
+	if(not defined $constraint) { $constraint = '1'; }
+
+	my($username) = getpwuid($>);
+
+	#print qq($CONDOR_Q -const '($constraint)&&Owner=="$username"' -format '%d.' ClusterId -format '%d\\n' ProcId\n);
+	my @jobs = `$CONDOR_Q -const '($constraint)&&Owner=="$username"' -format '%d.' ClusterId -format '%d\\n' ProcId`;
+	chomp @jobs;
+	return @jobs;
+}
+
+sub num_queued_jobs {
+	# We don't want to count removed jobs.
+	my @current = jobs_per_constraint('JobStatus!=3&&JobStatus!=5');
+	return scalar @current;
+}
+
+sub reset_dhcp {
+	print "Stopping DHCP service\n";
+	system("sudo", "/etc/rc.d/init.d/dnsmasq", "stop");
+	print "Clearing DHCP state\n";
+	system("sudo", "/bin/rm", "/var/lib/dnsmasq/dnsmasq.leases");
+	print "Starting DHCP service\n";
+	system("sudo", "/etc/rc.d/init.d/dnsmasq", "start");
+}
+
+sub set_state {
+	my($job, $network, $num_goal) = @_;
+	my @current = jobs_per_constraint(qq(JobStatus!=3&&JobStatus!=5&&NetworkPath=="$network"&&JobName=="$job"));
+	my $num_now = @current;
+
+	if($num_now > $num_goal) {
+		my $num_to_stop = $num_now - $num_goal;
+		for(my $i = 0; $i < $num_to_stop; $i++) {
+			my $id = shift @current;
+			chomp $id;
+			system($CONDOR_RM, $id);
+		}
+	}
+	if($num_goal > $num_now) {
+		my $num_to_start = $num_goal - $num_now;
+		for(my $i = 0; $i < $num_to_start; $i++) {
+			system($CONDOR_SUBMIT, "-append", "+NetworkPath=\"$network\"", "$job.submit");
+		}
+	}
+}
+
+sub help_and_exit {
+	print <<END;
+Usage:
+$0 [JOBNAME NETWORK COUNT] [JOBNAME NETWORK COUNT]...
+END
+	if(@_) { print "@_\n"; exit(1); }
+	exit(0);
+}
